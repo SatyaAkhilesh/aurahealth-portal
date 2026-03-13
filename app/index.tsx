@@ -53,45 +53,61 @@ export default function PatientLoginPage() {
   }
 
   const handleLogin = async () => {
-    setError('')
+    try {
+      setError('')
 
-    if (!form.email.trim() || !form.password.trim()) {
-      setError('Email and password are required')
-      return
-    }
+      const email = form.email.trim().toLowerCase()
+      const password = form.password.trim()
 
-    setLoading(true)
+      if (!email || !password) {
+        setError('Email and password are required')
+        return
+      }
 
-    const { data, error: queryError } = await supabase
-      .from('patients')
-      .select('id, name, email, created_at, password')
-      .eq('email', form.email.trim().toLowerCase())
-      .single()
+      setLoading(true)
 
-    if (queryError || !data) {
-      setError('Invalid credentials')
+      const { data, error: queryError } = await supabase
+        .from('patients')
+        .select('id, name, email, created_at, password')
+        .eq('email', email)
+        .maybeSingle()
+
+      console.log('login email:', email)
+      console.log('login data:', data)
+      console.log('login query error:', queryError)
+
+      if (queryError) {
+        setError('Login failed')
+        return
+      }
+
+      if (!data) {
+        setError('User not found')
+        return
+      }
+
+      if ((data.password || '').trim() !== password) {
+        setError('Invalid credentials')
+        return
+      }
+
+      await AsyncStorage.setItem(
+        PATIENT_SESSION_KEY,
+        JSON.stringify({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          created_at: data.created_at,
+        })
+      )
+
+      router.replace('/portal' as Href)
+    } catch (e) {
+      console.log('login crash:', e)
+      setError('Something went wrong')
+    } finally {
       setLoading(false)
-      return
     }
-
-    if (data.password !== form.password) {
-      setError('Invalid credentials')
-      setLoading(false)
-      return
-    }
-
-    await AsyncStorage.setItem(
-      PATIENT_SESSION_KEY,
-      JSON.stringify({
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        created_at: data.created_at,
-      })
-    )
-
-    router.replace('/portal' as Href)
-    setLoading(false)
   }
 
   if (checking) return null
@@ -102,15 +118,15 @@ export default function PatientLoginPage() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={s.hero}>
-     <Text style={s.eye}>AURAHEALTH PATIENT PORTAL</Text>
-<Text style={s.title}>
-  Manage Your Care,
-  {'\n'}
-  All in One Place
-</Text>
-<Text style={s.sub}>
-  View appointments, track prescriptions, and access your health information securely.
-</Text>
+        <Text style={s.eye}>AURAHEALTH PATIENT PORTAL</Text>
+        <Text style={s.title}>
+          Manage Your Care,
+          {'\n'}
+          All in One Place
+        </Text>
+        <Text style={s.sub}>
+          View appointments, track prescriptions, and access your health information securely.
+        </Text>
       </View>
 
       <Card style={s.card}>
