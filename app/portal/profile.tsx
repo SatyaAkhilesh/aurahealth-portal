@@ -16,14 +16,18 @@ type PatientSession = {
 }
 
 const P = {
-  teal: '#0F8DA8',
-  tealDark: '#0C6F86',
-  tealLight: '#E6F7FA',
-  cream: '#FAF7F2',
+  blue: '#2563EB',
+  blueDark: '#1D4ED8',
+  blueLight: '#DBEAFE',
+  sky: '#E0F2FE',
+  skyDark: '#0369A1',
+  green: '#16A34A',
+  greenLight: '#DCFCE7',
+  background: '#F8FAFC',
   white: '#FFFFFF',
-  forest: '#18382C',
-  stone: '#7C7A70',
-  parchment: '#E8E1D6',
+  heading: '#0F172A',
+  text: '#64748B',
+  border: '#E2E8F0',
 }
 
 export default function PortalProfile() {
@@ -54,11 +58,31 @@ export default function PortalProfile() {
   return (
     <ScrollView style={s.root} contentContainerStyle={{ padding: 20, paddingBottom: 50 }}>
       <View style={s.hero}>
-        <Avatar name={patient?.name || 'P'} size={64} />
-        <View style={s.heroInfo}>
-          <Text style={s.eye}>PROFILE</Text>
-          <Text style={s.title}>{patient?.name || 'Patient'}</Text>
-          <Text style={s.sub}>{patient?.email || '—'}</Text>
+        <View style={s.heroRow}>
+          <Avatar name={patient?.name || 'P'} size={68} />
+          <View style={s.heroInfo}>
+            <Text style={s.eye}>PROFILE</Text>
+            <Text style={s.title}>{patient?.name || 'Patient'}</Text>
+            <Text style={s.sub}>{patient?.email || '—'}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={s.statsGrid}>
+        <View style={[s.statCard, { borderLeftColor: P.blue }]}>
+          <View style={[s.statIconBox, { backgroundColor: P.blueLight }]}>
+            <Text style={s.statIcon}>🪪</Text>
+          </View>
+          <Text style={s.statValueSmall}>#{patient?.id?.slice(0, 8) || '—'}</Text>
+          <Text style={s.statLabel}>Patient ID</Text>
+        </View>
+
+        <View style={[s.statCard, { borderLeftColor: P.green }]}>
+          <View style={[s.statIconBox, { backgroundColor: P.greenLight }]}>
+            <Text style={s.statIcon}>✅</Text>
+          </View>
+          <Text style={s.statValueSmall}>Active</Text>
+          <Text style={s.statLabel}>Account Status</Text>
         </View>
       </View>
 
@@ -94,7 +118,15 @@ export default function PortalProfile() {
         </View>
       </Card>
 
-      <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+      <Card>
+        <Text style={s.sectionTitle}>Portal Access</Text>
+        <Text style={s.portalText}>
+          You are signed in to AuraHealth Patient Portal. You can securely review your appointments,
+          prescriptions, and personal account information here.
+        </Text>
+      </Card>
+
+      <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
         <Text style={s.logoutTxt}>Log Out</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -104,13 +136,15 @@ export default function PortalProfile() {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: P.cream,
+    backgroundColor: P.background,
   },
   hero: {
-    backgroundColor: P.teal,
-    borderRadius: 18,
-    padding: 22,
+    backgroundColor: P.blue,
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 16,
+  },
+  heroRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
@@ -119,7 +153,7 @@ const s = StyleSheet.create({
     flex: 1,
   },
   eye: {
-    color: '#CDEEF4',
+    color: '#DBEAFE',
     fontFamily: 'Nunito_700Bold',
     fontSize: 10,
     letterSpacing: 2,
@@ -128,18 +162,52 @@ const s = StyleSheet.create({
   title: {
     color: P.white,
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 22,
+    fontSize: 24,
   },
   sub: {
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.82)',
     fontFamily: 'Nunito_400Regular',
+    fontSize: 13,
+    marginTop: 4,
+  },
+  statsGrid: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  statCard: {
+    backgroundColor: P.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: P.border,
+    borderLeftWidth: 4,
+  },
+  statIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  statIcon: {
+    fontSize: 18,
+  },
+  statValueSmall: {
+    fontSize: 18,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: P.heading,
+  },
+  statLabel: {
     fontSize: 12,
+    fontFamily: 'Nunito_700Bold',
+    color: P.text,
     marginTop: 4,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Nunito_800ExtraBold',
-    color: P.forest,
+    color: P.heading,
     marginBottom: 10,
   },
   infoRow: {
@@ -148,33 +216,39 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: P.parchment,
+    borderBottomColor: P.border,
     gap: 12,
   },
   infoLabel: {
     fontSize: 13,
     fontFamily: 'Nunito_600SemiBold',
-    color: P.stone,
+    color: P.text,
     flex: 1,
   },
   infoValue: {
     fontSize: 13,
     fontFamily: 'Nunito_600SemiBold',
-    color: P.forest,
+    color: P.heading,
     flex: 1,
     textAlign: 'right',
   },
+  portalText: {
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: 'Nunito_400Regular',
+    color: P.text,
+  },
   logoutBtn: {
-    marginTop: 6,
+    marginTop: 8,
     backgroundColor: P.white,
-    borderWidth: 1,
-    borderColor: P.teal,
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: P.blue,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
   },
   logoutTxt: {
-    color: P.teal,
+    color: P.blue,
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
   },
