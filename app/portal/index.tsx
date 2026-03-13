@@ -1,26 +1,52 @@
 import { useEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { useRouter, type Href } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { supabase } from '@/lib/supabase'
-import Input from '@/components/Input'
-import Button from '@/components/Button'
 import Card from '@/components/Card'
+import Avatar from '@/components/Avatar'
+import EmptyState from '@/components/EmptyState'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 const PATIENT_SESSION_KEY = 'aurahealth_patient_session'
+
+type PatientSession = {
+  id: string
+  name: string
+  email: string
+  created_at?: string
+}
+
+type Appointment = {
+  id: string
+  provider: string
+  datetime: string
+  repeat: string
+  status?: string
+}
+
+type Prescription = {
+  id: string
+  medication: string
+  dosage: string
+  quantity: number
+  refill_on: string
+  refill_schedule: string
+  notes?: string
+  status?: string
+}
 
 const P = {
   blue: '#2563EB',
   blueDark: '#1D4ED8',
-  blueLight: '#E0F2FE',
+  blueLight: '#DBEAFE',
+  sky: '#E0F2FE',
+  skyDark: '#0369A1',
+  green: '#16A34A',
+  greenLight: '#DCFCE7',
+  amber: '#D97706',
+  amberLight: '#FEF3C7',
   background: '#F8FAFC',
   white: '#FFFFFF',
   heading: '#0F172A',
@@ -28,130 +54,211 @@ const P = {
   border: '#E2E8F0',
 }
 
-export default function PatientLoginPage() {
-  const router = useRouter()
+function isWithinNext7Days(dateStr: string) {
+  const now = new Date()
+  const target = new Date(dateStr)
+  const diff = (target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  return diff >= 0 && diff <= 7
+}
 
-  const [loading, setLoading] = useState(false)
-  const [checking, setChecking] = useState(true)
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-  })
-  const [error, setError] = useState('')
+function isRefillSoon(dateStr: string) {
+  return isWithinNext7Days(dateStr)
+}
+
+export default function PortalHome() {
+  const router = useRouter()
+  const [patient, setPatient] = useState<PatientSession | null>(null)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+  const [allPrescriptions, setAllPrescriptions] = useState<Prescription[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    checkSession()
+    fetchData()
   }, [])
 
-  const checkSession = async () => {
+  const fetchData = async () => {
     const raw = await AsyncStorage.getItem(PATIENT_SESSION_KEY)
 
-    if (raw) {
-      router.replace('/portal' as Href)
+    if (!raw) {
+      router.replace('/' as Href)
       return
     }
 
-    setChecking(false)
-  }
+    const session: PatientSession = JSON.parse(raw)
+    setPatient(session)
 
-  const handleLogin = async () => {
-    setError('')
+    const { data: appts } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('patient_id', session.id)
+      .order('datetime', { ascending: true })
 
-    if (!form.email.trim() || !form.password.trim()) {
-      setError('Email and password are required')
-      return
-    }
+    const { data: meds } = await supabase
+      .from('prescriptions')
+      .select('*')
+      .eq('patient_id', session.id)
+      .order('refill_on', { ascending: true })
 
-    setLoading(true)
+    const nextAppointments = (appts || []).filter((a) => {
+      if (a.status && a.status !== 'scheduled') return false
+      return isWithinNext7Days(a.datetime)
+    })
 
-    const { data, error: queryError } = await supabase
-      .from('patients')
-      .select('id, name, email, created_at, password')
-      .eq('email', form.email.trim().toLowerCase())
-      .single()
+    const nextRefills = (meds || []).filter((p) => isWithinNext7Days(p.refill_on))
 
-    if (queryError || !data) {
-      setError('Invalid credentials')
-      setLoading(false)
-      return
-    }
-
-    if (data.password !== form.password) {
-      setError('Invalid credentials')
-      setLoading(false)
-      return
-    }
-
-    await AsyncStorage.setItem(
-      PATIENT_SESSION_KEY,
-      JSON.stringify({
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        created_at: data.created_at,
-      })
-    )
-
-    router.replace('/portal' as Href)
+    setAppointments(nextAppointments)
+    setPrescriptions(nextRefills)
+    setAllPrescriptions(meds || [])
     setLoading(false)
   }
 
-  if (checking) return null
+  const greeting = () => {
+    const h = new Date().getHours()
+    if (h < 12) return 'Good morning'
+    if (h < 17) return 'Good afternoon'
+    return 'Good evening'
+  }
+
+  if (loading) return <LoadingSpinner message="Loading portal..." />
 
   return (
-    <KeyboardAvoidingView
-      style={s.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <ScrollView style={s.root} contentContainerStyle={{ padding: 20, paddingBottom: 50 }}>
       <View style={s.hero}>
-        <Text style={s.eye}>PATIENT PORTAL</Text>
-        <Text style={s.title}>
-          Your Health,
-          {'\n'}
-          at a Glance
-        </Text>
-        <Text style={s.sub}>
-          View upcoming appointments, medication refills, and your health details.
-        </Text>
+        <View style={s.heroRow}>
+          <Avatar name={patient?.name || 'P'} size={60} />
+          <View style={{ flex: 1 }}>
+            <Text style={s.eye}>AURAHEALTH PATIENT PORTAL</Text>
+            <Text style={s.title}>
+              {greeting()}, {patient?.name?.split(' ')[0]} 👋
+            </Text>
+            <Text style={s.sub}>
+              Here’s your health summary for the next 7 days.
+            </Text>
+          </View>
+        </View>
       </View>
 
-      <Card style={s.card}>
-        <Text style={s.cardTitle}>Sign In</Text>
-        <Text style={s.cardSub}>Use your patient email and password</Text>
-
-        <Input
-          label="Email"
-          value={form.email}
-          onChangeText={(text) => setForm({ ...form, email: text })}
-          placeholder="mark@some-email-provider.net"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <Input
-          label="Password"
-          value={form.password}
-          onChangeText={(text) => setForm({ ...form, password: text })}
-          placeholder="Password123!"
-          secureTextEntry
-          autoCapitalize="none"
-        />
-
-        {!!error && <Text style={s.error}>⚠ {error}</Text>}
-
-        <Button title="Sign In" onPress={handleLogin} loading={loading} />
-
-        <View style={s.demoBox}>
-          <Text style={s.demoTitle}>Demo Credentials</Text>
-          <Text style={s.demoText}>mark@some-email-provider.net / Password123!</Text>
-          <Text style={s.demoText}>lisa@some-email-provider.net / Password123!</Text>
+      <View style={s.statsGrid}>
+        <View style={[s.statCard, { borderLeftColor: P.blue }]}>
+          <View style={[s.statIconBox, { backgroundColor: P.blueLight }]}>
+            <Text style={s.statIcon}>📅</Text>
+          </View>
+          <Text style={s.statValue}>{appointments.length}</Text>
+          <Text style={s.statLabel}>Upcoming Appointments</Text>
+          <Text style={s.statSub}>Next 7 days</Text>
         </View>
 
-        <TouchableOpacity activeOpacity={0.7}>
-          <Text style={s.portalOnly}>Patient access only</Text>
-        </TouchableOpacity>
+        <View style={[s.statCard, { borderLeftColor: P.amber }]}>
+          <View style={[s.statIconBox, { backgroundColor: P.amberLight }]}>
+            <Text style={s.statIcon}>💊</Text>
+          </View>
+          <Text style={s.statValue}>{prescriptions.length}</Text>
+          <Text style={s.statLabel}>Refills Due Soon</Text>
+          <Text style={s.statSub}>Next 7 days</Text>
+        </View>
+
+        <View style={[s.statCard, { borderLeftColor: P.green }]}>
+          <View style={[s.statIconBox, { backgroundColor: P.greenLight }]}>
+            <Text style={s.statIcon}>✅</Text>
+          </View>
+          <Text style={s.statValue}>{allPrescriptions.length}</Text>
+          <Text style={s.statLabel}>Total Prescriptions</Text>
+          <Text style={s.statSub}>All medications</Text>
+        </View>
+      </View>
+
+      <Card>
+        <Text style={s.sectionTitle}>Patient Information</Text>
+        <View style={s.infoRow}>
+          <Text style={s.infoLabel}>Name</Text>
+          <Text style={s.infoValue}>{patient?.name}</Text>
+        </View>
+        <View style={s.infoRow}>
+          <Text style={s.infoLabel}>Email</Text>
+          <Text style={s.infoValue}>{patient?.email}</Text>
+        </View>
+        <View style={[s.infoRow, { borderBottomWidth: 0 }]}>
+          <Text style={s.infoLabel}>Member Since</Text>
+          <Text style={s.infoValue}>
+            {patient?.created_at ? new Date(patient.created_at).toLocaleDateString() : '—'}
+          </Text>
+        </View>
       </Card>
-    </KeyboardAvoidingView>
+
+      <Card>
+        <View style={s.sectionHead}>
+          <Text style={s.sectionTitle}>Appointments in Next 7 Days</Text>
+          <TouchableOpacity onPress={() => router.push('/portal/appointments' as Href)}>
+            <Text style={s.link}>View All →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {appointments.length === 0 ? (
+          <EmptyState
+            icon="📅"
+            title="No upcoming appointments"
+            message="You’re all caught up for the next 7 days."
+          />
+        ) : (
+          appointments.map((appt) => (
+            <View key={appt.id} style={s.rowCard}>
+              <View style={s.rowTop}>
+                <Text style={s.rowTitle}>{appt.provider}</Text>
+                <View style={s.badgeBlue}>
+                  <Text style={s.badgeBlueText}>{appt.status || 'scheduled'}</Text>
+                </View>
+              </View>
+              <Text style={s.rowSub}>
+                {new Date(appt.datetime).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                })}
+              </Text>
+              <Text style={s.rowMeta}>Repeat: {appt.repeat}</Text>
+            </View>
+          ))
+        )}
+      </Card>
+
+      <Card>
+        <View style={s.sectionHead}>
+          <Text style={s.sectionTitle}>Refills in Next 7 Days</Text>
+          <TouchableOpacity onPress={() => router.push('/portal/prescriptions' as Href)}>
+            <Text style={s.link}>View All →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {prescriptions.length === 0 ? (
+          <EmptyState
+            icon="💊"
+            title="No refills due soon"
+            message="No medication refills are scheduled in the next 7 days."
+          />
+        ) : (
+          prescriptions.map((pres) => (
+            <View key={pres.id} style={s.rowCard}>
+              <View style={s.rowTop}>
+                <Text style={s.rowTitle}>{pres.medication}</Text>
+                {isRefillSoon(pres.refill_on) && (
+                  <View style={s.badgeAmber}>
+                    <Text style={s.badgeAmberText}>Refill Soon</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={s.rowSub}>
+                {pres.dosage} · Qty: {pres.quantity}
+              </Text>
+              <Text style={s.rowMeta}>Refill on: {pres.refill_on}</Text>
+            </View>
+          ))
+        )}
+      </Card>
+    </ScrollView>
   )
 }
 
@@ -159,83 +266,167 @@ const s = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: P.background,
-    justifyContent: 'center',
-    padding: 24,
   },
   hero: {
-    marginBottom: 24,
+    backgroundColor: P.blue,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 16,
+  },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
   eye: {
-    fontSize: 11,
+    color: '#DBEAFE',
     fontFamily: 'Nunito_700Bold',
+    fontSize: 10,
     letterSpacing: 2,
-    color: P.blue,
-    marginBottom: 6,
-  },
-  title: {
-    fontSize: 30,
-    lineHeight: 38,
-    fontFamily: 'Nunito_800ExtraBold',
-    color: P.heading,
-  },
-  sub: {
-    marginTop: 8,
-    fontSize: 14,
-    lineHeight: 22,
-    fontFamily: 'Nunito_400Regular',
-    color: P.text,
-    maxWidth: 520,
-  },
-  card: {
-    maxWidth: 520,
-    width: '100%',
-    alignSelf: 'center',
-    backgroundColor: P.white,
-    borderColor: P.border,
-  },
-  cardTitle: {
-    fontSize: 22,
-    fontFamily: 'Nunito_800ExtraBold',
-    color: P.heading,
     marginBottom: 4,
   },
-  cardSub: {
+  title: {
+    color: P.white,
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 24,
+    lineHeight: 32,
+  },
+  sub: {
+    color: 'rgba(255,255,255,0.82)',
+    fontFamily: 'Nunito_400Regular',
     fontSize: 13,
+    marginTop: 4,
+  },
+  statsGrid: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  statCard: {
+    backgroundColor: P.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: P.border,
+    borderLeftWidth: 4,
+  },
+  statIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  statIcon: {
+    fontSize: 18,
+  },
+  statValue: {
+    fontSize: 28,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: P.heading,
+  },
+  statLabel: {
+    fontSize: 13,
+    fontFamily: 'Nunito_700Bold',
+    color: P.heading,
+    marginTop: 2,
+  },
+  statSub: {
+    fontSize: 11,
     fontFamily: 'Nunito_400Regular',
     color: P.text,
-    marginBottom: 18,
+    marginTop: 2,
   },
-  error: {
-    color: '#DC2626',
+  sectionHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: P.heading,
+  },
+  link: {
     fontSize: 12,
-    fontFamily: 'Nunito_400Regular',
-    marginBottom: 12,
-  },
-  demoBox: {
-    marginTop: 16,
-    backgroundColor: P.blueLight,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
-  },
-  demoTitle: {
-    fontSize: 13,
-    fontFamily: 'Nunito_700Bold',
-    color: P.blueDark,
-    marginBottom: 6,
-  },
-  demoText: {
-    fontSize: 12,
-    fontFamily: 'Nunito_400Regular',
-    color: P.blueDark,
-    marginBottom: 2,
-  },
-  portalOnly: {
-    marginTop: 16,
-    textAlign: 'center',
-    fontSize: 13,
     fontFamily: 'Nunito_700Bold',
     color: P.blue,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: P.border,
+    gap: 12,
+  },
+  infoLabel: {
+    fontSize: 13,
+    fontFamily: 'Nunito_600SemiBold',
+    color: P.text,
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 13,
+    fontFamily: 'Nunito_600SemiBold',
+    color: P.heading,
+    flex: 1,
+    textAlign: 'right',
+  },
+  rowCard: {
+    backgroundColor: P.white,
+    borderWidth: 1,
+    borderColor: P.border,
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 10,
+  },
+  rowTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 4,
+    flexWrap: 'wrap',
+  },
+  rowTitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito_700Bold',
+    color: P.heading,
+  },
+  rowSub: {
+    fontSize: 12,
+    fontFamily: 'Nunito_400Regular',
+    color: P.text,
+  },
+  rowMeta: {
+    fontSize: 11,
+    fontFamily: 'Nunito_600SemiBold',
+    color: P.skyDark,
+    marginTop: 6,
+  },
+  badgeBlue: {
+    backgroundColor: P.sky,
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  badgeBlueText: {
+    fontSize: 10,
+    fontFamily: 'Nunito_700Bold',
+    color: P.skyDark,
+    textTransform: 'capitalize',
+  },
+  badgeAmber: {
+    backgroundColor: P.amberLight,
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  badgeAmberText: {
+    fontSize: 10,
+    fontFamily: 'Nunito_700Bold',
+    color: P.amber,
   },
 })
