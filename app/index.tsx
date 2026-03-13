@@ -102,15 +102,15 @@ export default function PatientLoginPage() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={s.hero}>
-        <Text style={s.eye}>PATIENT PORTAL</Text>
-        <Text style={s.title}>
-          Your Health,
-          {'\n'}
-          at a Glance
-        </Text>
-        <Text style={s.sub}>
-          View upcoming appointments, medication refills, and your health details.
-        </Text>
+     <Text style={s.eye}>AURAHEALTH PATIENT PORTAL</Text>
+<Text style={s.title}>
+  Manage Your Care,
+  {'\n'}
+  All in One Place
+</Text>
+<Text style={s.sub}>
+  View appointments, track prescriptions, and access your health information securely.
+</Text>
       </View>
 
       <Card style={s.card}>

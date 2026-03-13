@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import Card from '@/components/Card'
 import Avatar from '@/components/Avatar'
+import { supabase } from '@/lib/supabase'
+import { exportPatientSummaryPdf } from '@/lib/pdf/exportPatientSummaryPdf'
 
 const PATIENT_SESSION_KEY = 'aurahealth_patient_session'
 
@@ -33,6 +35,8 @@ const P = {
 export default function PortalProfile() {
   const router = useRouter()
   const [patient, setPatient] = useState<PatientSession | null>(null)
+  const [appointments, setAppointments] = useState<any[]>([])
+  const [prescriptions, setPrescriptions] = useState<any[]>([])
 
   useEffect(() => {
     loadPatient()
@@ -48,6 +52,19 @@ export default function PortalProfile() {
 
     const session: PatientSession = JSON.parse(raw)
     setPatient(session)
+
+    const { data: appts } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('patient_id', session.id)
+
+    const { data: meds } = await supabase
+      .from('prescriptions')
+      .select('*')
+      .eq('patient_id', session.id)
+
+    setAppointments(appts || [])
+    setPrescriptions(meds || [])
   }
 
   const handleLogout = async () => {
@@ -125,6 +142,14 @@ export default function PortalProfile() {
           prescriptions, and personal account information here.
         </Text>
       </Card>
+
+      <TouchableOpacity
+        style={s.pdfBtn}
+        onPress={() => exportPatientSummaryPdf(patient, appointments, prescriptions)}
+        activeOpacity={0.8}
+      >
+        <Text style={s.pdfBtnTxt}>⬇ Download Patient Summary PDF</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
         <Text style={s.logoutTxt}>Log Out</Text>
@@ -238,8 +263,22 @@ const s = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
     color: P.text,
   },
-  logoutBtn: {
+  pdfBtn: {
     marginTop: 8,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  pdfBtnTxt: {
+    color: '#1D4ED8',
+    fontSize: 14,
+    fontFamily: 'Nunito_700Bold',
+  },
+  logoutBtn: {
+    marginTop: 10,
     backgroundColor: P.white,
     borderWidth: 1.5,
     borderColor: P.blue,

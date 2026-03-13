@@ -7,6 +7,7 @@ import Card from '@/components/Card'
 import EmptyState from '@/components/EmptyState'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import Badge from '@/components/Badge'
+import { exportAppointmentsPdf } from '@/lib/pdf/exportAppointmentsPdf'
 
 const PATIENT_SESSION_KEY = 'aurahealth_patient_session'
 
@@ -26,21 +27,29 @@ type Appointment = {
 }
 
 const P = {
-  teal: '#0F8DA8',
-  tealDark: '#0C6F86',
-  cream: '#FAF7F2',
-  forest: '#18382C',
-  stone: '#7C7A70',
+  blue: '#2563EB',
+  blueDark: '#1D4ED8',
+  blueLight: '#DBEAFE',
+  background: '#F8FAFC',
+  white: '#FFFFFF',
+  heading: '#0F172A',
+  text: '#64748B',
+  border: '#E2E8F0',
 }
 
 function isWithinNext3Months(dateStr: string) {
-  return true
+  const now = new Date()
+  const limit = new Date()
+  limit.setMonth(limit.getMonth() + 3)
+  const target = new Date(dateStr)
+  return target >= now && target <= limit
 }
 
 export default function PortalAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed' | 'cancelled'>('all')
+  const [patientName, setPatientName] = useState('')
 
   useEffect(() => {
     fetchAppointments()
@@ -54,6 +63,7 @@ export default function PortalAppointments() {
     }
 
     const session: PatientSession = JSON.parse(raw)
+    setPatientName(session.name)
 
     const { data } = await supabase
       .from('appointments')
@@ -100,6 +110,14 @@ export default function PortalAppointments() {
         ))}
       </ScrollView>
 
+      <TouchableOpacity
+        style={s.pdfBtn}
+        onPress={() => exportAppointmentsPdf(patientName, filteredAppointments)}
+        activeOpacity={0.8}
+      >
+        <Text style={s.pdfBtnTxt}>⬇ Download Appointments PDF</Text>
+      </TouchableOpacity>
+
       {filteredAppointments.length === 0 ? (
         <Card>
           <EmptyState
@@ -136,16 +154,16 @@ export default function PortalAppointments() {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: P.cream,
+    backgroundColor: P.background,
   },
   hero: {
-    backgroundColor: P.teal,
-    borderRadius: 18,
-    padding: 22,
+    backgroundColor: P.blue,
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 16,
   },
   eye: {
-    color: '#CDEEF4',
+    color: '#DBEAFE',
     fontFamily: 'Nunito_700Bold',
     fontSize: 10,
     letterSpacing: 2,
@@ -154,12 +172,12 @@ const s = StyleSheet.create({
   title: {
     color: '#FFFFFF',
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 22,
+    fontSize: 24,
   },
   sub: {
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.82)',
     fontFamily: 'Nunito_400Regular',
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 4,
   },
   filterRow: {
@@ -173,35 +191,49 @@ const s = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E8E1D6',
+    borderColor: '#E2E8F0',
   },
   filterBtnActive: {
-    backgroundColor: P.teal,
-    borderColor: P.teal,
+    backgroundColor: P.blue,
+    borderColor: P.blue,
   },
   filterTxt: {
     fontSize: 12,
     fontFamily: 'Nunito_700Bold',
-    color: P.stone,
+    color: P.text,
   },
   filterTxtActive: {
     color: '#FFFFFF',
   },
+  pdfBtn: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pdfBtnTxt: {
+    color: '#1D4ED8',
+    fontSize: 13,
+    fontFamily: 'Nunito_700Bold',
+  },
   cardTitle: {
     fontSize: 15,
     fontFamily: 'Nunito_700Bold',
-    color: P.forest,
+    color: P.heading,
     marginBottom: 4,
   },
   cardSub: {
     fontSize: 12,
     fontFamily: 'Nunito_400Regular',
-    color: P.stone,
+    color: P.text,
   },
   meta: {
     fontSize: 11,
     fontFamily: 'Nunito_600SemiBold',
-    color: P.tealDark,
+    color: P.blueDark,
     marginTop: 8,
   },
 })
