@@ -1,4 +1,4 @@
-# AuraHealth EMR
+# AuraHealth Admin EMR
 
 AuraHealth EMR is a responsive admin-facing electronic medical records system built with Expo, React Native Web, Supabase, and TypeScript. It provides healthcare staff with a clean interface for managing patients, appointments, prescriptions, and printable patient reports.
 
