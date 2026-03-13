@@ -167,7 +167,7 @@ export default function PortalPrescriptions() {
 
               {!!pres.notes && (
                 <View style={s.notesBox}>
-                  <Text style={s.notesTitle}>Doctor's notes</Text>
+                 <Text style={s.notesTitle}>Doctor&apos;s notes</Text>
                   <Text style={s.notesText}>{pres.notes}</Text>
                 </View>
               )}
