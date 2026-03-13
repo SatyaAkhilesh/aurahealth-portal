@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native'
 import { useRouter, type Href } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
@@ -67,6 +67,9 @@ function isRefillSoon(dateStr: string) {
 
 export default function PortalHome() {
   const router = useRouter()
+  const { width } = useWindowDimensions()
+  const isMobile = width < 900
+
   const [patient, setPatient] = useState<PatientSession | null>(null)
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
@@ -139,7 +142,7 @@ export default function PortalHome() {
         </View>
       </View>
 
-      <View style={s.statsGrid}>
+      <View style={[s.statsGrid, isMobile && s.statsGridMobile]}>
         <View style={[s.statCard, { borderLeftColor: P.blue }]}>
           <View style={[s.statIconBox, { backgroundColor: P.blueLight }]}>
             <Text style={s.statIcon}>📅</Text>
@@ -298,10 +301,15 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   statsGrid: {
+    flexDirection: 'row',
     gap: 12,
     marginBottom: 16,
   },
+  statsGridMobile: {
+    flexDirection: 'column',
+  },
   statCard: {
+    flex: 1,
     backgroundColor: P.white,
     borderRadius: 16,
     padding: 16,
