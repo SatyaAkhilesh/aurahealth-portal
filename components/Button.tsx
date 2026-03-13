@@ -9,22 +9,42 @@ type ButtonProps = {
   disabled?: boolean
 }
 
-export default function Button({ title, onPress, variant = 'primary', loading = false, disabled = false }: ButtonProps) {
-  const bgColor = variant === 'primary' ? theme.primary : variant === 'danger' ? theme.danger : theme.surface
-  const textColor = variant === 'secondary' ? theme.primary : theme.white
-  const borderColor = variant === 'secondary' ? theme.primary : 'transparent'
+export default function Button({
+  title,
+  onPress,
+  variant = 'primary',
+  loading = false,
+  disabled = false,
+}: ButtonProps) {
+  const bgColor =
+    variant === 'primary'
+      ? '#2563EB'
+      : variant === 'danger'
+        ? theme.danger
+        : theme.surface
+
+  const textColor = variant === 'secondary' ? '#2563EB' : theme.white
+  const borderColor = variant === 'secondary' ? '#2563EB' : 'transparent'
 
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
-      style={[styles.btn, { backgroundColor: bgColor, borderColor, opacity: disabled ? 0.5 : 1 }]}
+      style={[
+        styles.btn,
+        {
+          backgroundColor: bgColor,
+          borderColor,
+          opacity: disabled ? 0.5 : 1,
+        },
+      ]}
     >
-      {loading
-        ? <ActivityIndicator color={textColor} size="small" />
-        : <Text style={[styles.txt, { color: textColor }]}>{title}</Text>
-      }
+      {loading ? (
+        <ActivityIndicator color={textColor} size="small" />
+      ) : (
+        <Text style={[styles.txt, { color: textColor }]}>{title}</Text>
+      )}
     </TouchableOpacity>
   )
 }
@@ -42,5 +62,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
     letterSpacing: 0.2,
-  }
+  },
 })

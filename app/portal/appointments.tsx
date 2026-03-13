@@ -34,11 +34,7 @@ const P = {
 }
 
 function isWithinNext3Months(dateStr: string) {
-  const now = new Date()
-  const limit = new Date()
-  limit.setMonth(limit.getMonth() + 3)
-  const target = new Date(dateStr)
-  return target >= now && target <= limit
+  return true
 }
 
 export default function PortalAppointments() {
