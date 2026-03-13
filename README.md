@@ -1,18 +1,23 @@
-# AuraHealth Admin EMR
 
-AuraHealth EMR is a responsive admin-facing electronic medical records system built with Expo, React Native Web, Supabase, and TypeScript. It provides healthcare staff with a clean interface for managing patients, appointments, prescriptions, and printable patient reports.
+
+# AuraHealth Patient Portal
+
+AuraHealth Patient Portal is the patient-facing side of the AuraHealth system. It allows patients to log in, view their upcoming appointments, review prescriptions, monitor refill timelines, access profile information, and download printable care summaries.
 
 ## Overview
 
-This application is the admin/provider side of the AuraHealth system. It is designed to help staff:
+This application is designed to give patients a simple, trustworthy, healthcare-focused interface for viewing their own data.
 
-- create and manage patient records
-- schedule and update appointments
-- manage prescriptions and refill timelines
-- export patient-related data as printable PDF-friendly reports
-- navigate a modern dashboard with summary statistics
+The portal includes:
 
-The app uses a nature-inspired design system and supports responsive behavior across desktop and mobile web.
+- secure patient login
+- a dashboard with next-7-day summaries
+- a full appointments view
+- a prescriptions view with refill indicators
+- a profile page with logout
+- PDF export support
+
+It is built as a separate app from the admin EMR, while sharing the same Supabase backend and many reusable UI/util files.
 
 ## Tech Stack
 
@@ -23,76 +28,76 @@ The app uses a nature-inspired design system and supports responsive behavior ac
 - **Supabase**
 - **Expo Font**
 - **Nunito**
-- **HTML-based PDF exports**
+- **Reusable shared components from the EMR**
+- **Printable HTML-to-PDF export utilities**
 
-## Core Features
+## Portal Routes
 
-### Patient Management
-- View all patients in a searchable list
-- Create new patient records
-- View detailed patient profile
-- Edit patient information
-- Delete patient records
-- Copy patient UUID from patient detail page
+- `/` — patient login page
+- `/portal` — patient dashboard
+- `/portal/appointments` — all upcoming appointments
+- `/portal/prescriptions` — full prescriptions page
+- `/portal/profile` — profile and logout
 
-### Appointment Management
-- Create appointments for a patient
-- Edit existing appointments
-- Delete appointments
-- Track appointment status
-- Filter appointments by status
-- Use quick date buttons for faster scheduling
-- Export appointments as a printable PDF
+## Main Features
 
-### Prescription Management
-- Create prescriptions for a patient
-- Edit existing prescriptions
-- Delete prescriptions
-- Search/select medication from a predefined list
-- Track refill dates and refill schedules
-- Add doctor’s notes
-- Highlight urgent refill timelines
-- Export prescriptions as a printable PDF
+### Authentication
+- email/password login
+- Supabase session-based authentication
+- protected `/portal/*` routes
+- unauthenticated users redirected back to login
 
-### Dashboard and Analytics
-- Overview page with summary cards
-- Dynamic greeting based on time of day
-- Quick actions for key workflows
-- Recent patients section
-- Counts for patients, appointments, prescriptions, and active patients
+### Dashboard
+- personalized greeting
+- patient information summary
+- appointments in the next 7 days
+- refill items due in the next 7 days
+- visual summary/stat cards
 
-### Patient Summary Export
-- Download a full patient summary report
-- Includes:
-  - patient information
-  - appointment history/list
-  - prescription list
-  - refill alerts
+### Appointments
+- view upcoming appointments
+- filter by status
+- see provider, date/time, repeat schedule, and status
+- export appointments PDF
+
+### Prescriptions
+- view all prescriptions
+- filter by active/inactive state
+- see dosage, quantity, refill date, refill schedule, and doctor’s notes
+- highlight refill urgency
+- export prescriptions PDF
+
+### Profile
+- view patient info
+- logout
+- export patient summary PDF
+
+## Intended User Experience
+
+The portal was designed to feel:
+
+- calm
+- clean
+- trustworthy
+- easy to understand
+- patient-friendly
+
+Compared with the admin EMR, the portal shifts to a cleaner healthcare-style presentation with blue/teal accents and simplified information hierarchy.
 
 ## App Structure
 
-### Main Routes
-
-- `/admin` — admin dashboard
-- `/admin/new` — create patient form
-- `/admin/[id]` — patient detail view
-- `/admin/[id]/appointments` — appointments CRUD
-- `/admin/[id]/prescriptions` — prescriptions CRUD
-
-### File Structure
+### Suggested File Structure
 
 ```bash
 app/
   _layout.tsx
   index.tsx
-  admin/
+  portal/
     _layout.tsx
     index.tsx
-    new.tsx
-    [id]/
-      index.tsx
-      appointments.tsx
-      prescriptions.tsx
+    appointments.tsx
+    prescriptions.tsx
+    profile.tsx
 
 components/
   Avatar.tsx
