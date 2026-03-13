@@ -7,7 +7,7 @@ import {
   Platform,
   TouchableOpacity,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, type Href } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { supabase } from '@/lib/supabase'
@@ -45,7 +45,7 @@ export default function PatientLoginPage() {
     const raw = await AsyncStorage.getItem(PATIENT_SESSION_KEY)
 
     if (raw) {
-      router.replace('/portal')
+      router.replace('/portal' as Href)
       return
     }
 
@@ -90,7 +90,7 @@ export default function PatientLoginPage() {
       })
     )
 
-    router.replace('/portal')
+    router.replace('/portal' as Href)
     setLoading(false)
   }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, type Href } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import Card from '@/components/Card'
@@ -38,7 +38,7 @@ export default function PortalProfile() {
     const raw = await AsyncStorage.getItem(PATIENT_SESSION_KEY)
 
     if (!raw) {
-      router.replace('/')
+      router.replace('/' as Href)
       return
     }
 
@@ -48,7 +48,7 @@ export default function PortalProfile() {
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem(PATIENT_SESSION_KEY)
-    router.replace('/')
+    router.replace('/' as Href)
   }
 
   return (
@@ -78,11 +78,13 @@ export default function PortalProfile() {
         <View style={s.infoRow}>
           <Text style={s.infoLabel}>Member Since</Text>
           <Text style={s.infoValue}>
-            {patient?.created_at ? new Date(patient.created_at).toLocaleDateString('en-US', {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric',
-            }) : '—'}
+            {patient?.created_at
+              ? new Date(patient.created_at).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              : '—'}
           </Text>
         </View>
 

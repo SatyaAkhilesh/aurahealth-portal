@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, type Href } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { supabase } from '@/lib/supabase'
@@ -71,7 +71,7 @@ export default function PortalHome() {
     const raw = await AsyncStorage.getItem(PATIENT_SESSION_KEY)
 
     if (!raw) {
-      router.replace('/')
+      router.replace('/' as Href)
       return
     }
 
@@ -138,7 +138,7 @@ export default function PortalHome() {
       <Card>
         <View style={s.sectionHead}>
           <Text style={s.sectionTitle}>Appointments in Next 7 Days</Text>
-          <TouchableOpacity onPress={() => router.push('/portal/appointments')}>
+          <TouchableOpacity onPress={() => router.push('/portal/appointments' as Href)}>
             <Text style={s.link}>View All →</Text>
           </TouchableOpacity>
         </View>
@@ -172,7 +172,7 @@ export default function PortalHome() {
       <Card>
         <View style={s.sectionHead}>
           <Text style={s.sectionTitle}>Refills in Next 7 Days</Text>
-          <TouchableOpacity onPress={() => router.push('/portal/prescriptions')}>
+          <TouchableOpacity onPress={() => router.push('/portal/prescriptions' as Href)}>
             <Text style={s.link}>View All →</Text>
           </TouchableOpacity>
         </View>
