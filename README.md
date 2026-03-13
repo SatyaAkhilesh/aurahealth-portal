@@ -1,9 +1,4 @@
 
----
-
-# README 2 — AuraHealth Patient Portal
-
-```md
 # AuraHealth Patient Portal
 
 AuraHealth Patient Portal is the patient-facing side of the AuraHealth system. It allows patients to log in, view their upcoming appointments, review prescriptions, monitor refill timelines, access profile information, and download printable care summaries.
