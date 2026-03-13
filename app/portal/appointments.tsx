@@ -29,7 +29,6 @@ type Appointment = {
 const P = {
   blue: '#2563EB',
   blueDark: '#1D4ED8',
-  blueLight: '#DBEAFE',
   background: '#F8FAFC',
   white: '#FFFFFF',
   heading: '#0F172A',
@@ -42,7 +41,7 @@ function isWithinNext3Months(dateStr: string) {
   const limit = new Date()
   limit.setMonth(limit.getMonth() + 3)
   const target = new Date(dateStr)
-  return target >= now && target <= limit
+  return target <= limit
 }
 
 export default function PortalAppointments() {
@@ -56,24 +55,46 @@ export default function PortalAppointments() {
   }, [])
 
   const fetchAppointments = async () => {
-    const raw = await AsyncStorage.getItem(PATIENT_SESSION_KEY)
-    if (!raw) {
+    try {
+      setLoading(true)
+
+      const raw = await AsyncStorage.getItem(PATIENT_SESSION_KEY)
+
+      if (!raw) {
+        console.log('No patient session found')
+        setAppointments([])
+        setLoading(false)
+        return
+      }
+
+      const session: PatientSession = JSON.parse(raw)
+      setPatientName(session.name)
+
+      console.log('Patient session id:', session.id)
+
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('patient_id', session.id)
+        .order('datetime', { ascending: true })
+
+      console.log('Appointments data:', data)
+      console.log('Appointments error:', error)
+
+      if (error) {
+        setAppointments([])
+        setLoading(false)
+        return
+      }
+
+      const upcoming = (data || []).filter((a) => isWithinNext3Months(a.datetime))
+      setAppointments(upcoming)
+    } catch (e) {
+      console.log('Appointments fetch crash:', e)
+      setAppointments([])
+    } finally {
       setLoading(false)
-      return
     }
-
-    const session: PatientSession = JSON.parse(raw)
-    setPatientName(session.name)
-
-    const { data } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('patient_id', session.id)
-      .order('datetime', { ascending: true })
-
-    const upcoming = (data || []).filter((a) => isWithinNext3Months(a.datetime))
-    setAppointments(upcoming)
-    setLoading(false)
   }
 
   const filteredAppointments =
@@ -91,11 +112,7 @@ export default function PortalAppointments() {
         <Text style={s.sub}>Showing appointments for the next 3 months.</Text>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={s.filterRow}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRow}>
         {(['all', 'scheduled', 'completed', 'cancelled'] as const).map((item) => (
           <TouchableOpacity
             key={item}
@@ -123,7 +140,7 @@ export default function PortalAppointments() {
           <EmptyState
             icon="📅"
             title="No appointments found"
-            message="There are no appointments for this filter in the next 3 months."
+            message="No appointments are available for this filter."
           />
         </Card>
       ) : (

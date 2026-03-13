@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase'
 import Card from '@/components/Card'
 import EmptyState from '@/components/EmptyState'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { exportPrescriptionsPdf } from '@/lib/pdf/exportPrescriptionsPdf'
 
 const PATIENT_SESSION_KEY = 'aurahealth_patient_session'
 
@@ -38,6 +37,8 @@ const P = {
   greenLight: '#DCFCE7',
   amber: '#D97706',
   amberLight: '#FEF3C7',
+  red: '#DC2626',
+  redLight: '#FEE2E2',
   background: '#F8FAFC',
   white: '#FFFFFF',
   heading: '#0F172A',
@@ -56,7 +57,6 @@ export default function PortalPrescriptions() {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all')
-  const [patientName, setPatientName] = useState('')
 
   useEffect(() => {
     fetchPrescriptions()
@@ -70,7 +70,6 @@ export default function PortalPrescriptions() {
     }
 
     const session: PatientSession = JSON.parse(raw)
-    setPatientName(session.name)
 
     const { data } = await supabase
       .from('prescriptions')
@@ -146,14 +145,6 @@ export default function PortalPrescriptions() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      <TouchableOpacity
-        style={s.pdfBtn}
-        onPress={() => exportPrescriptionsPdf(patientName, filteredPrescriptions)}
-        activeOpacity={0.8}
-      >
-        <Text style={s.pdfBtnTxt}>⬇ Download Prescriptions PDF</Text>
-      </TouchableOpacity>
 
       {filteredPrescriptions.length === 0 ? (
         <Card>
@@ -313,20 +304,6 @@ const s = StyleSheet.create({
   },
   filterTxtActive: {
     color: P.white,
-  },
-  pdfBtn: {
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  pdfBtnTxt: {
-    color: '#1D4ED8',
-    fontSize: 13,
-    fontFamily: 'Nunito_700Bold',
   },
   rowTop: {
     flexDirection: 'row',
