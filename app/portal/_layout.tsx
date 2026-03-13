@@ -58,16 +58,16 @@ export default function PortalLayout() {
 
             return (
               <TouchableOpacity
-                key={item.path}
-                style={[s.navItem, active && s.navItemActive]}
-                onPress={() => router.push(item.path)}
-                activeOpacity={0.8}
-              >
-                <Text style={s.navIcon}>{item.icon}</Text>
-                <Text style={[s.navLabel, active && s.navLabelActive]}>
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
+  key={item.label}
+  style={[s.navItem, active && s.navItemActive]}
+  onPress={() => router.push(item.path)}
+  activeOpacity={0.8}
+>
+  <Text style={s.navIcon}>{item.icon}</Text>
+  <Text style={[s.navLabel, active && s.navLabelActive]}>
+    {item.label}
+  </Text>
+</TouchableOpacity>
             )
           })}
         </View>
